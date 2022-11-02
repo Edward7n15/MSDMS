@@ -4,7 +4,7 @@ import uuid
 # creating connection from host language to sqlite3
 conn = sqlite3.connect('./MSDMS')
 c = conn.cursor()
-
+script = None
 def login(input_id):
     '''
     The login screen, ask for id and password, could determine users and artists, allow new users to register.
@@ -30,11 +30,13 @@ def id_check(input_id):
     '''
     user = False
     artist = False
-    c.execute('select uid from users where uid=:input_id', {'input_id': input_id})
+    script = 'select uid from users where uid like "'+ str(input_id) + '";'
+    c.execute(script)
     row_u = c.fetchone()
     if row_u:
         user = True
-    c.execute('select aid from artists where aid=:input_id;', {'input_id': input_id})
+    script = 'select aid from artists where aid like "'+ str(input_id) + '";'
+    c.execute(script)
     row_a = c.fetchone()
     if row_a:
         artist = True
@@ -64,7 +66,7 @@ def signup():
     id_list = []
     for i in ids:
         id_list.append(i[0])
-    print(id_list)
+
     while True:
         uid = input('-> creating new user account\nenter your uid in exact 4 characters: ')
         if len(uid) != 4:
@@ -92,11 +94,13 @@ def check_pwd(login_type, input_id):
     pwd = input('enter your password: ')
 
     if login_type == '1' or login_type == '3':
-        c.execute('select pwd from users where uid =:id;', {'id':input_id})
+        script = 'select pwd from users where uid like "' + str(input_id) + '";'
+        c.execute(script)
         row = c.fetchone()
 
     elif login_type == '2':
-        c.execute('select pwd from artists where aid =:id;', {'id':input_id})
+        script = 'select pwd from artists where aid like "' + str(input_id) + '";'
+        c.execute(script)
         row = c.fetchone()
 
     if row and pwd == row[0]:
@@ -121,7 +125,7 @@ def user_interface(current_id):
         elif op == '3':
             search_artists()
         elif op == '0':
-            quit()
+            return
         else:
             print('invalid command')
 
@@ -129,6 +133,7 @@ def start_session():
     pass
 
 def search_songs():
+    
     pass
 
 def select_song():
@@ -150,21 +155,28 @@ def artist_interface(current_id):
     while True:
         op = input('enter 1 to add a song, enter 2 to find top fans and playlists, enter 0 to logout: ')
         if op == '0':
-            quit()
+            return
         elif op == '1':
             add_song(current_id)
         elif op == '2':
-            find_top()
+            find_top(current_id)
         else:
             print('invalid command')
 
 def add_song(current_id):
+    '''
+    add a song to the songs table, and add the relation to perform table
+    add more relations to perform table if there is any co-artist
+    :param current_id: current login aid
+    :return:
+    '''
     # get song info
-    print('-> adding songs')
+    print('-> adding a song')
     title = input('enter song title: ')
     duration = input('enter duration: ')
     # check if there is a song with same title and duration
-    c.execute('select * from songs where title =:title and duration =:duration;', {'title':title, 'duration':duration})
+    script = 'select * from songs where title like "' + title +  '" and duration = ' + str(duration) + ';'
+    c.execute(script)
     ret = c.fetchone()
     # if yes, prompt a warning
     if ret:
@@ -187,11 +199,12 @@ def add_song(current_id):
     while True:
         have_co = input('any co-artist? y/n: ').lower()
         if  have_co == 'y':
-            co_num = input('enter the number of co-artists: ')
+            co_num = int(input('enter the number of co-artists: '))
             for i in range(co_num):
                 while True:
-                    co_artist = input('enter the aid of artist ' + (i + 1) + ': ')
-                    c.execute('select aid from artists where aid =:aid;', {'aid': co_artist})
+                    co_artist = input('enter the aid of artist ' + str(int(i) + 1) + ': ')
+                    script = 'select aid from artists where aid like "' + co_artist + '";'
+                    c.execute(script)
                     result = c.fetchone()
                     if not result:
                         print('invalid aid, try again')
@@ -205,22 +218,24 @@ def add_song(current_id):
             print('invalid command')
 
     c.execute('insert into perform values (:aid, :sid);', {'aid': current_id, 'sid': sid})
-
-    c.execute('select * from songs;')
-    get = c.fetchall()
-    print('all songs:')
-    print(get)
     return
 
-def find_top():
-    pass
+def find_top(current_id):
+    # query the top 3 users who listen to their songs the longest time
+    script = ''
+    # list their uid and names
+    # query the top 3 playlists that include the largest number of their songs
+    # list their pid, title, and uid
+
 
 if __name__ == '__main__':
     with open('prj-tables.txt', 'r') as infile:
         conn.executescript(infile.read())
     while True:
         print('-> This is the login screen')
-        input_id = input('enter your id: ')
+        input_id = input('enter your id to login, or enter 0 to quit: ')
+        if input_id == '0':
+            quit()
         user_type = login(input_id)
         if user_type == '1':
             user_interface(input_id)
