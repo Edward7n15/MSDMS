@@ -152,7 +152,7 @@ def search_songs():
             m = max(0, m)
         elif inp == 7:
             m += 5
-            m = min((len(songs)%5)*5, m)
+            m = min((len(songs)/5)*5, m)
     pass
 
 def select_song():
