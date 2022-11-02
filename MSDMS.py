@@ -133,7 +133,26 @@ def start_session():
     pass
 
 def search_songs():
-    
+    kw = input("Input the keywords: ").split()
+
+    songs = []
+    m = 0
+    while True:
+        n = min(5, len(songs)-m)
+        for i in range(m, m+n):
+            print(songs[i])
+        inp = int(input("Enter 0 to end, Enter 1 to 5 to select the songs, Enter 6 to go the previous page, Enter 7 to go the next page"))
+        if inp == 0:
+            return
+        if 1 <= inp <= n:
+            select_song(songs[m + inp - 1][0])
+            return
+        if inp == 6:
+            m -= 5
+            m = max(0, m)
+        elif inp == 7:
+            m += 5
+            m = min((len(songs)%5)*5, m)
     pass
 
 def select_song():
