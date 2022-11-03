@@ -7,7 +7,7 @@ conn = sqlite3.connect('./MSDMS')
 c = conn.cursor()
 script = None
 
-
+"""
 def login(input_id):
     '''
     The login screen, ask for id and password, could determine users and artists, allow new users to register.
@@ -24,13 +24,13 @@ def login(input_id):
         # ask for specific login type
         login_type = input('enter 1 to login user account, enter 2 to longin artist account: ')
     return login_type
-
+"""
 
 def id_check(input_id):
     '''
     check if an id is legal. If yes, determine it is a uid or an aid. If no, prompt for a uid register.
     :param: (str)input id
-    :return: (int) 1: user 2:artist 3.both -1: exit
+    :return: (int) 1: user 2:artist 3.both -1: exit 0: signup
     '''
     user = False
     artist = False
@@ -55,9 +55,9 @@ def id_check(input_id):
     else:
         choice = input('cannot find your id, enter 1 to signup, enter 0 to quit: ')
         if choice == '1':
-            signup()
+            return '0'
         elif choice == '0':
-            quit()
+            return '-1'
 
 
 def signup():
@@ -109,8 +109,10 @@ def check_pwd(login_type, input_id):
         row = c.fetchone()
 
     if row and pwd == row[0]:
+        print('correct password')
         return True
     else:
+        print('wrong password')
         return False
 
 
@@ -134,8 +136,8 @@ def user_interface(current_id):
         elif op == '4':
             end_session(sno, current_id)
         elif op == '0':
-            end_session()
-            login(current_id)
+            end_session(sno, current_id)
+            return
         else:
             print('invalid command')
 
@@ -241,7 +243,7 @@ def select_song(sid, uid):
             # if no, insert a value
             else:
                 c.execute('insert into listen values (:uid, :sno, :sid, 1);', {'sno': sno, 'uid':uid, 'sid':sid})
-            return
+
 
         elif inp == 2:
             # output artist name, aid, title, duration, playlists[]
@@ -260,7 +262,7 @@ def select_song(sid, uid):
             pl = c.fetchall()
             print('included in: (pid, playlist_title)')
             print(pl)
-            return
+
 
         elif inp == 3:
             pid = int(input('enter the pid of the playlist: '))
@@ -285,7 +287,7 @@ def select_song(sid, uid):
                 ttl = input('name your new playlist: ')
                 c.execute('insert into playlists values (:pid, :ttl, :uid)', {'pid':pid, 'ttl':ttl, 'uid':uid})
                 c.execute('insert into plinclude values (:pid, :sid, 1)', {'pid':pid, 'sid':sid})
-            return
+
         else:
             print('invalid command')
 
@@ -322,12 +324,15 @@ def search_artists(uid):
     cnt_list.sort(key=lambda x: x[-1], reverse=True)
 
     artists = cnt_list
+    for i in artists:
+        if i[-1] == 0:
+            del artists[artists.index(i)]
     mode = 1
     m = 0
     while True:
         n = min(5, len(artists) - m)
         for i in range(m, m + n):
-            print(artists[i])
+            print(artists[i][:3])
         inp = int(input(
             "Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page: "))
         if inp == 0:
@@ -401,7 +406,7 @@ def artist_interface(current_id):
     while True:
         op = input('enter 1 to add a song, enter 2 to find top fans and playlists, enter 0 to logout: ')
         if op == '0':
-            login(current_id)
+            return
         elif op == '1':
             add_song(current_id)
         elif op == '2':
@@ -507,15 +512,33 @@ if __name__ == '__main__':
         conn.executescript(infile.read())
     while True:
         print('-> This is the login screen')
-        input_id = input('enter your id to login, or enter 0 to quit: ')
+        while True:
+            input_id = input('enter your id to login, or enter 0 to quit: ')
+            if len(input_id) == 4 or input_id == '0':
+                break
+            else:
+                print('your id should in length 4')
         if input_id == '0':
-            quit()
-        user_type = login(input_id)
-        if user_type == '1':
-            user_interface(input_id)
-        elif user_type == '2':
-            artist_interface(input_id)
+            break
 
+        login_type = id_check(input_id)
+        if login_type == '-1':
+            print('closing app')
+            break
+        elif login_type == '0':
+            signup()
+            break
+        elif login_type == '3':
+            # ask for specific login type
+            login_type = input('enter 1 to login user account, enter 2 to longin artist account: ')
+
+        user_type = login_type
+
+        if user_type == '1' and check_pwd(user_type, input_id):
+            user_interface(input_id)
+        elif user_type == '2' and check_pwd(user_type, input_id):
+            artist_interface(input_id)
     # end
+    print('data saved')
     conn.commit()
 
