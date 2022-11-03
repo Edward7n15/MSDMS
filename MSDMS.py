@@ -26,6 +26,7 @@ def login(input_id):
     return login_type
 """
 
+
 def id_check(input_id):
     '''
     check if an id is legal. If yes, determine it is a uid or an aid. If no, prompt for a uid register.
@@ -196,7 +197,9 @@ def search_songs(current_id):
                 return
             if songs[m + inp - 1][-1] == "playlist":
                 pid = songs[m + inp - 1][0]
-                c.execute('select s.sid, s.title, s.duration from songs s join plinclude pi using (sid) where pi.pid = :pid', {'pid':pid})
+                c.execute(
+                    'select s.sid, s.title, s.duration from songs s join plinclude pi using (sid) where pi.pid = :pid',
+                    {'pid': pid})
                 pack = c.fetchall()
                 cnt_list = []
                 for song in pack:
@@ -233,32 +236,35 @@ def select_song(sid, uid):
                 sno = start_session(uid)
             # check if the song is played in this session
             c.execute('select * from listen l join songs s using (sid) where l.sno =:sno and l.uid =:uid and l.sid '
-                      '=:sid;', {'sno': sno, 'uid':uid, 'sid':sid})
+                      '=:sid;', {'sno': sno, 'uid': uid, 'sid': sid})
             ret = c.fetchall()
             # if yes, increase cnt by 1
             if ret:
-                c.execute('select cnt from listen where uid = :uid and sno = :sno and sid = :sid;', {'sno': sno, 'uid':uid, 'sid':sid})
+                c.execute('select cnt from listen where uid = :uid and sno = :sno and sid = :sid;',
+                          {'sno': sno, 'uid': uid, 'sid': sid})
                 cnt = c.fetchone()[0] + 1
-                c.execute('update listen set cnt = :cnt where uid = :uid and sno = :sno and sid = :sid;', {'sno': sno, 'uid':uid, 'sid':sid, 'cnt':cnt})
+                c.execute('update listen set cnt = :cnt where uid = :uid and sno = :sno and sid = :sid;',
+                          {'sno': sno, 'uid': uid, 'sid': sid, 'cnt': cnt})
             # if no, insert a value
             else:
-                c.execute('insert into listen values (:uid, :sno, :sid, 1);', {'sno': sno, 'uid':uid, 'sid':sid})
+                c.execute('insert into listen values (:uid, :sno, :sid, 1);', {'sno': sno, 'uid': uid, 'sid': sid})
 
 
         elif inp == 2:
             # output artist name, aid, title, duration, playlists[]
-            c.execute('select distinct a.name, a.aid from artists a join perform p using (aid) where sid = :sid;', {'sid':sid})
+            c.execute('select distinct a.name, a.aid from artists a join perform p using (aid) where sid = :sid;',
+                      {'sid': sid})
             artist = c.fetchall()
             print('artists: (name, aid)')
             print(artist)
 
-            c.execute('select title, duration from songs where sid = :sid', {'sid':sid})
+            c.execute('select title, duration from songs where sid = :sid', {'sid': sid})
             song = c.fetchall()
             print('song info: (song_title, duration)')
             print(song)
 
             c.execute('select distinct pl.pid, pl.title from plinclude p join playlists pl using (pid) where p.sid = '
-                      ':sid', {'sid':sid})
+                      ':sid', {'sid': sid})
             pl = c.fetchall()
             print('included in: (pid, playlist_title)')
             print(pl)
@@ -278,15 +284,16 @@ def select_song(sid, uid):
                 num = c.fetchall()
                 for p in num:
                     if pid == p[0]:
-                        index = p[1]+1
-                        c.execute('insert into plinclude values (:pid, :sid, :sord)', {'pid':pid, 'sid':sid, 'sord': index})
+                        index = p[1] + 1
+                        c.execute('insert into plinclude values (:pid, :sid, :sord)',
+                                  {'pid': pid, 'sid': sid, 'sord': index})
             else:
                 print('-> pid not exist')
                 pid = random.sample(range(0, 5000), 1)[0]
                 print('-> assign to', pid)
                 ttl = input('name your new playlist: ')
-                c.execute('insert into playlists values (:pid, :ttl, :uid)', {'pid':pid, 'ttl':ttl, 'uid':uid})
-                c.execute('insert into plinclude values (:pid, :sid, 1)', {'pid':pid, 'sid':sid})
+                c.execute('insert into playlists values (:pid, :ttl, :uid)', {'pid': pid, 'ttl': ttl, 'uid': uid})
+                c.execute('insert into plinclude values (:pid, :sid, 1)', {'pid': pid, 'sid': sid})
 
         else:
             print('invalid command')
@@ -385,6 +392,7 @@ def search_artists(uid):
         elif inp == 7:
             m += 5
             m = min((len(artists) / 5) * 5, m)
+
 
 def end_session(sno, current_id):
     if sno is not None:
@@ -491,18 +499,18 @@ def find_top(current_id):
     ret = c.fetchall()
     print('your top 3 users are: ')
     for user in ret:
-        c.execute('select * from users where uid =:uid;', {'uid':user[0]})
+        c.execute('select * from users where uid =:uid;', {'uid': user[0]})
         get = c.fetchone()
         print(get)
     # query the top 3 playlists that include the largest number of their songs
     script = 'select p.aid, pl.pid, count(p.sid) from perform p join plinclude pl using (sid) group by pl.pid, ' \
-             'p.aid having p.aid = "'+current_id+'" order by count(p.sid) desc limit 3; '
+             'p.aid having p.aid = "' + current_id + '" order by count(p.sid) desc limit 3; '
     c.execute(script)
     # list their pid, title, and uid
     ret = c.fetchall()
     print('your top 3 playlists are: ')
     for pl in ret:
-        c.execute('select * from playlists where pid =:pid;', {'pid':pl[1]})
+        c.execute('select * from playlists where pid =:pid;', {'pid': pl[1]})
         get = c.fetchone()
         print(get)
 
@@ -541,4 +549,3 @@ if __name__ == '__main__':
     # end
     print('data saved')
     conn.commit()
-
