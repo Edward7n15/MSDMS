@@ -1,6 +1,6 @@
 import sqlite3
-import uuid
-from operator import itemgetter
+import random
+import datetime
 
 # creating connection from host language to sqlite3
 conn = sqlite3.connect('./MSDMS')
@@ -118,20 +118,36 @@ def user_interface(current_id):
     print("-> user face")
     while True:
         op = input('enter 1 to start a session, enter 2 to search for songs and playlists, enter 3 to search for '
-                   'artists enter 4 to end the session, enter 0 to quit: ')
+                   'artists, enter 4 to end the session, enter 0 to logout: ')
         if op == '1':
-            start_session()
+            sno = start_session(current_id)
         elif op == '2':
             search_songs()
         elif op == '3':
             search_artists()
+        elif op == '4':
+            end_session(sno, current_id)
         elif op == '0':
             return
         else:
             print('invalid command')
 
-def start_session():
-    pass
+def start_session(current_id):
+    c.execute('select sno from sessions;')
+    all_sno = c.fetchall()
+    sno_lst = []
+    for sn in all_sno:
+        sno_lst.append(sn)
+    while True:
+        sno = random.sample(range(0, 5000), 1)[0]
+        if sno not in sno_lst:
+            break
+    now = datetime.datetime.now()
+    date = now.strftime('%Y-%m-%d')
+    c.execute('insert into sessions values (:uid, :sno, :start, null);', {'uid': current_id, 'sno': sno, 'start':date})
+    print('-> session start')
+    return sno
+
 
 def search_songs():
     kw = input("Input the keywords: ").lower().split()
@@ -160,7 +176,8 @@ def search_songs():
         for i in range(m, m + n):
             print(songs[i])
         inp = int(input(
-            "Enter 0 to end, Enter 1 to 5 to select the songs, Enter 6 to go the previous page, Enter 7 to go the next page"))
+            "Enter 0 to end, Enter 1 to 5 to select the songs, Enter 6 to go the previous page, Enter 7 to go the "
+            "next page: "))
         if inp == 0:
             return
         if 1 <= inp <= n:
@@ -184,10 +201,14 @@ def search_artists():
     pack = c.fetchall()
     cnt_list = []
     cnt = {}
+    total_song = {}
     for artist in pack:
         name = artist[1].lower()
         if artist[0] not in cnt:
             cnt[artist[0]] = 0
+        if artist[0] not in total_song:
+            total_song[artist[0]] = artist[-1]
+
         title = artist[-3].lower().split()
         joint_name = [value for value in name.split() if value in kw]
         joint_title = [value for value in title if value in kw]
@@ -199,7 +220,7 @@ def search_artists():
 
     bag = c.fetchall()
     for artist in bag:
-        cnt_list.append([artist[0], artist[1], artist[2], cnt[artist[0]]])
+        cnt_list.append([artist[0], artist[1], artist[2], total_song[artist[0]], cnt[artist[0]]])
 
     cnt_list.sort(key=lambda x: x[-1], reverse=True)
 
@@ -210,7 +231,7 @@ def search_artists():
         for i in range(m, m + n):
             print(artists[i])
         inp = int(input(
-            "Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page"))
+            "Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page: "))
         if inp == 0:
             return
         if 1 <= inp <= n:
@@ -257,8 +278,10 @@ def search_artists():
             m += 5
             m = min((len(artists) / 5) * 5, m)
 
-def end_session():
-    pass
+def end_session(sno, current_id):
+    now = datetime.datetime.now()
+    date = now.strftime('%Y-%m-%d')
+    c.execute('update sessions set end =:date where sno =:sno and uid =:uid;', {'date':date, 'sno':sno, 'uid':current_id})
 
 def artist_interface(current_id):
     '''
@@ -308,7 +331,16 @@ def add_song(current_id):
         # if no, assign the song an unique sid, and ask if there is any other co-artist
 
     # random sid
-    sid = str(uuid.uuid4().int)
+    c.execute('select sid from songs;')
+    all_sid = c.fetchall()
+    sid_lst = []
+    for song in all_sid:
+        sid_lst.append(song[0])
+    while True:
+        sid = random.sample(range(0, 5000), 1)[0]
+        if sid not in sid_lst:
+            break
+
     c.execute('insert into songs values (:sid, :title, :duration);',
               {'sid': sid, 'title': title, 'duration': duration})
     while True:
