@@ -12,25 +12,28 @@ b:
 
 
 c:
-We run every function seprately and test if their functionality is correct and if there is any error.
+We run every function seprately by various input and test if their functionality is correct and if there is any error.
+We designed some input data to test the whole program.
+
 
 
 
 d:
 Louis:
-login(input_id)
-id_check(input_id)
-signup()
-search_songs()
-search_artists()
+login(input_id)     30min   Nov 1st
+id_check(input_id)  30min   Nov 1st
+signup()            30min   Nov 1st
+search_songs()      90min   Nov 2nd
+search_artists()    70min   Nov 2nd
 
 Boshen:
-user_interface(current_id)
-check_pwd(login_type, input_id)
-start_session(current_id)
-song_action(songs)
-select_song(sid, uid)
-end_session(sno, current_id)
-artist_interface(current_id)
-add_song(current_id)
-find_top(current_id)
+user_interface(current_id)        30min   Nov 1st
+check_pwd(login_type, input_id)   20min   Nov 1st
+start_session(current_id)         20min   Nov 1st
+song_action(songs)                50min   Nov 2nd
+select_song(sid, uid)             30min   Nov 2nd
+end_session(sno, current_id)      20min   Nov 2nd
+artist_interface(current_id)      15min   Nov 2nd
+add_song(current_id)              30min   Nov 2nd
+find_top(current_id)              30min   Nov 2nd
+
