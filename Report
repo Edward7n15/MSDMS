@@ -1,10 +1,18 @@
 (a) a general overview of your system with a small user guide, (b) a detailed design of your software with a focus on the components required to deliver the major functions of your application, (c) your testing strategy, and (d) your group work break-down strategy
 
+
+a:
+First, you can log in or sign up by following the instructions. 
+If you are a user, you will see the user interface to ask you if you want to start the session or end the session or search songs, playlists, artists or log out. 
+If you are an artist, you will see the  artist interface and ask you if you want to add songs or find the top 3 fans and playlists or log out.
+If you log out, you will be back to log in interface
+
 b:
 
 
-c:
 
+c:
+We run every function seprately and test if their functionality is correct and if there is any error.
 
 
 
