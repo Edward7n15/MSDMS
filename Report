@@ -1,0 +1,28 @@
+(a) a general overview of your system with a small user guide, (b) a detailed design of your software with a focus on the components required to deliver the major functions of your application, (c) your testing strategy, and (d) your group work break-down strategy
+
+b:
+
+
+c:
+
+
+
+
+d:
+Louis:
+login(input_id)
+id_check(input_id)
+signup()
+search_songs()
+search_artists()
+
+Boshen:
+user_interface(current_id)
+check_pwd(login_type, input_id)
+start_session(current_id)
+song_action(songs)
+select_song(sid, uid)
+end_session(sno, current_id)
+artist_interface(current_id)
+add_song(current_id)
+find_top(current_id)
