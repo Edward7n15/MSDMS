@@ -159,6 +159,29 @@ def select_song():
     pass
 
 def search_artists():
+    kw = input("Input the keywords: ").split()
+    artists = []
+    m = 0
+    while True:
+        n = min(5, len(artists)-m)
+        for i in range(m, m+n):
+            print(artists[i])
+        inp = int(input("Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page"))
+        if inp == 0:
+            return
+        if 1 <= inp <= n:
+            if artists[m + inp -1][3] == "song":
+                select_song(uid, artists[m + inp - 1][0])
+                return
+            if artists[m + inp -1][3] == "artist":
+                artists = []
+                m = 0
+        if inp == 6:
+            m -= 5
+            m = max(0, m)
+        elif inp == 7:
+            m += 5
+            m = min((len(artists)/ 5)*5, m)
     pass
 
 def end_session():
