@@ -129,7 +129,7 @@ def user_interface(current_id):
         elif op == '2':
             search_songs(current_id)
         elif op == '3':
-            search_artists()
+            search_artists(current_id)
         elif op == '4':
             end_session(sno, current_id)
         elif op == '0':
@@ -187,11 +187,17 @@ def search_songs(current_id):
         if inp == 0:
             return
         if 1 <= inp <= n:
-            if artists[m + inp - 1][3] == "song":
+            if songs[m + inp - 1][-1] == "song":
                 select_song(songs[m + inp - 1][0], current_id)
                 return
-            if artists[m + inp - 1][3] == "artist":
-                artists = []
+            if songs[m + inp - 1][-1] == "playlist":
+                pid = songs[m + inp - 1][0]
+                c.execute('select s.sid, s.title, s.duration from songs s join plinclude pi using (sid) where pi.pid = :pid', {'pid':pid})
+                pack = c.fetchall()
+                cnt_list = []
+                for song in pack:
+                    cnt_list.append([song[0], song[1], song[2], 'song'])
+                songs = cnt_list
                 m = 0
         if inp == 6:
             m -= 5
@@ -239,16 +245,50 @@ def select_song(sid, uid):
             # output artist name, aid, title, duration, playlists[]
             c.execute('select distinct a.name, a.aid from artists a join perform p using (aid) where sid = :sid;', {'sid':sid})
             artist = c.fetchall()
-            print('artists: ')
+            print('artists: (name, aid)')
             print(artist)
+
+            c.execute('select title, duration from songs where sid = :sid', {'sid':sid})
+            song = c.fetchall()
+            print('song info: (song_title, duration)')
+            print(song)
+
+            c.execute('select distinct pl.pid, pl.title from plinclude p join playlists pl using (pid) where p.sid = '
+                      ':sid', {'sid':sid})
+            pl = c.fetchall()
+            print('included in: (pid, playlist_title)')
+            print(pl)
             return
+
         elif inp == 3:
+            pid = int(input('enter the pid of the playlist: '))
+            # check if this pid exists
+            c.execute('select pid from playlists')
+            ret = c.fetchall()
+            id_list = []
+            for i in ret:
+                id_list.append(i[0])
+            if pid in id_list:
+                c.execute('select pl.pid, max(pi.sorder) from plinclude pi join playlists pl using (pid) group by '
+                          'pl.pid;')
+                num = c.fetchall()
+                for p in num:
+                    if pid == p[0]:
+                        index = p[1]+1
+                        c.execute('insert into plinclude values (:pid, :sid, :sord)', {'pid':pid, 'sid':sid, 'sord': index})
+            else:
+                print('-> pid not exist')
+                pid = random.sample(range(0, 5000), 1)[0]
+                print('-> assign to', pid)
+                ttl = input('name your new playlist: ')
+                c.execute('insert into playlists values (:pid, :ttl, :uid)', {'pid':pid, 'ttl':ttl, 'uid':uid})
+                c.execute('insert into plinclude values (:pid, :sid, 1)', {'pid':pid, 'sid':sid})
             return
         else:
             print('invalid command')
 
 
-def search_artists():
+def search_artists(uid):
     kw = input("Input the keywords: ").lower().split()
     c.execute('with song_num(aid, num) as (select a.aid, count(sid) from artists a join perform using (aid) join '
               'songs using (sid) group by a.aid)select * from artists join perform using (aid) join songs using (sid) '
@@ -280,6 +320,7 @@ def search_artists():
     cnt_list.sort(key=lambda x: x[-1], reverse=True)
 
     artists = cnt_list
+    mode = 1
     m = 0
     while True:
         n = min(5, len(artists) - m)
@@ -290,11 +331,20 @@ def search_artists():
         if inp == 0:
             return
         if 1 <= inp <= n:
-            if artists[m + inp - 1][3] == "song":
+            if mode == 2:
                 select_song(uid, artists[m + inp - 1][0])
                 return
-            if artists[m + inp - 1][3] == "artist":
-                artists = []
+            if mode == 1:
+                mode += 1
+                aid = artists[m + inp - 1][0]
+                c.execute(
+                    'select s.sid, s.title, s.duration from songs s join perform p using (sid) where p.aid = :aid',
+                    {'aid': aid})
+                pack = c.fetchall()
+                cnt_list = []
+                for song in pack:
+                    cnt_list.append([song[0], song[1], song[2]])
+                artists = cnt_list
                 m = 0
         if inp == 6:
             m -= 5
