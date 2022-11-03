@@ -121,6 +121,7 @@ def user_interface(current_id):
     :return:
     '''
     print("-> user face")
+    sno = None
     while True:
         op = input('enter 1 to start a session, enter 2 to search for songs and playlists, enter 3 to search for '
                    'artists, enter 4 to end the session, enter 0 to logout: ')
@@ -133,7 +134,8 @@ def user_interface(current_id):
         elif op == '4':
             end_session(sno, current_id)
         elif op == '0':
-            return
+            end_session()
+            login(current_id)
         else:
             print('invalid command')
 
@@ -379,14 +381,14 @@ def search_artists(uid):
             m += 5
             m = min((len(artists) / 5) * 5, m)
 
-def select_artists():
-    pass
-
 def end_session(sno, current_id):
-    now = datetime.datetime.now()
-    date = now.strftime('%Y-%m-%d')
-    c.execute('update sessions set end =:date where sno =:sno and uid =:uid;',
-              {'date': date, 'sno': sno, 'uid': current_id})
+    if sno is not None:
+        now = datetime.datetime.now()
+        date = now.strftime('%Y-%m-%d')
+        c.execute('update sessions set end =:date where sno =:sno and uid =:uid;',
+                  {'date': date, 'sno': sno, 'uid': current_id})
+    else:
+        print('no starting session')
 
 
 def artist_interface(current_id):
@@ -399,7 +401,7 @@ def artist_interface(current_id):
     while True:
         op = input('enter 1 to add a song, enter 2 to find top fans and playlists, enter 0 to logout: ')
         if op == '0':
-            return
+            login(current_id)
         elif op == '1':
             add_song(current_id)
         elif op == '2':
@@ -514,7 +516,6 @@ if __name__ == '__main__':
         elif user_type == '2':
             artist_interface(input_id)
 
-    '''    
     # end
     conn.commit()
-    '''
+
