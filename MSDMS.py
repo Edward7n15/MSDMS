@@ -186,16 +186,50 @@ def search_artists():
     cnt = {}
     for artist in pack:
         name = artist[1].lower()
-        if name not in cnt:
-            cnt[name] = 0
+        if artist[0] not in cnt:
+            cnt[artist[0]] = 0
         title = artist[-3].lower().split()
         joint_name = [value for value in name.split() if value in kw]
         joint_title = [value for value in title if value in kw]
         joint_num_name = len(set(joint_name))
         joint_num_title = len(set(joint_title))
         joint_num = joint_num_title + joint_num_name
-        cnt[name] += joint_num
-    sorted(cnt.items(), key=lambda kv:(kv[1], kv[0]), reverse = True)
+        cnt[artist[0]] += joint_num
+    c.execute('select * from artists;')
+
+    bag = c.fetchall()
+    for artist in bag:
+        cnt_list.append([artist[0], artist[1], artist[2], cnt[artist[0]]])
+
+    cnt_list.sort(key=lambda x: x[-1], reverse=True)
+
+    artists = cnt_list
+    m = 0
+    while True:
+        n = min(5, len(artists) - m)
+        for i in range(m, m + n):
+            print(artists[i])
+        inp = int(input(
+            "Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page"))
+        if inp == 0:
+            return
+        if 1 <= inp <= n:
+            if artists[m + inp - 1][3] == "song":
+                select_song(uid, artists[m + inp - 1][0])
+                return
+            if artists[m + inp - 1][3] == "artist":
+                artists = []
+                m = 0
+        if inp == 6:
+            m -= 5
+            m = max(0, m)
+        elif inp == 7:
+            m += 5
+            m = min((len(artists) / 5) * 5, m)
+
+
+
+    cnt_list.sort(key=lambda x: x[3], reverse=True)
 
 
 
