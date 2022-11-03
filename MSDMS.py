@@ -6,6 +6,8 @@ import datetime
 conn = sqlite3.connect('./MSDMS')
 c = conn.cursor()
 script = None
+
+
 def login(input_id):
     '''
     The login screen, ask for id and password, could determine users and artists, allow new users to register.
@@ -23,6 +25,7 @@ def login(input_id):
         login_type = input('enter 1 to login user account, enter 2 to longin artist account: ')
     return login_type
 
+
 def id_check(input_id):
     '''
     check if an id is legal. If yes, determine it is a uid or an aid. If no, prompt for a uid register.
@@ -31,12 +34,12 @@ def id_check(input_id):
     '''
     user = False
     artist = False
-    script = 'select uid from users where uid like "'+ str(input_id) + '";'
+    script = 'select uid from users where uid like "' + str(input_id) + '";'
     c.execute(script)
     row_u = c.fetchone()
     if row_u:
         user = True
-    script = 'select aid from artists where aid like "'+ str(input_id) + '";'
+    script = 'select aid from artists where aid like "' + str(input_id) + '";'
     c.execute(script)
     row_a = c.fetchone()
     if row_a:
@@ -79,8 +82,9 @@ def signup():
 
     name = input('enter user name: ')
     pwd = input('enter password: ')
-    c.execute('insert into users values (:uid, :name, :pwd);', {'uid':uid, 'name':name, 'pwd': pwd})
+    c.execute('insert into users values (:uid, :name, :pwd);', {'uid': uid, 'name': name, 'pwd': pwd})
     user_interface(uid)
+
 
 def check_pwd(login_type, input_id):
     '''
@@ -109,6 +113,7 @@ def check_pwd(login_type, input_id):
     else:
         return False
 
+
 def user_interface(current_id):
     '''
     display user op, logout and exit options
@@ -122,7 +127,7 @@ def user_interface(current_id):
         if op == '1':
             sno = start_session(current_id)
         elif op == '2':
-            search_songs()
+            search_songs(current_id)
         elif op == '3':
             search_artists()
         elif op == '4':
@@ -131,6 +136,7 @@ def user_interface(current_id):
             return
         else:
             print('invalid command')
+
 
 def start_session(current_id):
     c.execute('select sno from sessions;')
@@ -144,12 +150,12 @@ def start_session(current_id):
             break
     now = datetime.datetime.now()
     date = now.strftime('%Y-%m-%d')
-    c.execute('insert into sessions values (:uid, :sno, :start, null);', {'uid': current_id, 'sno': sno, 'start':date})
+    c.execute('insert into sessions values (:uid, :sno, :start, null);', {'uid': current_id, 'sno': sno, 'start': date})
     print('-> session start')
     return sno
 
 
-def search_songs():
+def search_songs(current_id):
     kw = input("Input the keywords: ").lower().split()
     c.execute('select * from songs;')
     pack = c.fetchall()
@@ -181,7 +187,8 @@ def search_songs():
         if inp == 0:
             return
         if 1 <= inp <= n:
-            select_song(songs[m + inp - 1][0])
+            select_song(songs[m + inp - 1][0], current_id)
+
             return
         if inp == 6:
             m -= 5
@@ -190,8 +197,53 @@ def search_songs():
             m += 5
             m = min(int(len(songs) / 5) * 5, m)
 
-def select_song():
-    pass
+
+def select_song(sid, uid):
+    while True:
+        inp = int(input(
+            "Enter 0 to return to interface, Enter 1 to listen, Enter 2 to see more information about it, Enter 3 to "
+            "add it to a playlist: "))
+        if inp == 0:
+            return
+        elif inp == 1:
+            # check if a session has already started
+            c.execute('select * from sessions;')
+            ret = c.fetchall()
+            now = datetime.datetime.now()
+            date = now.strftime('%Y-%m-%d')
+            sno = None
+            for sen in ret:
+                if sen[0] == uid and sen[2] == date and sen[3] is None:
+                    sno = sen[1]
+            # if no, start a session
+            if sno is None:
+                sno = start_session(uid)
+            # check if the song is played in this session
+            c.execute('select * from listen l join songs s using (sid) where l.sno =:sno and l.uid =:uid and l.sid '
+                      '=:sid;', {'sno': sno, 'uid':uid, 'sid':sid})
+            ret = c.fetchall()
+            # if yes, increase cnt by 1
+            if ret:
+                c.execute('select cnt from listen where uid = :uid and sno = :sno and sid = :sid;', {'sno': sno, 'uid':uid, 'sid':sid})
+                cnt = c.fetchone()[0] + 1
+                c.execute('update listen set cnt = :cnt where uid = :uid and sno = :sno and sid = :sid;', {'sno': sno, 'uid':uid, 'sid':sid, 'cnt':cnt})
+            # if no, insert a value
+            else:
+                c.execute('insert into listen values (:uid, :sno, :sid, 1);', {'sno': sno, 'uid':uid, 'sid':sid})
+            return
+
+        elif inp == 2:
+            # output artist name, aid, title, duration, playlists[]
+            c.execute('select distinct a.name, a.aid from artists a join perform p using (aid) where sid = :sid;', {'sid':sid})
+            artist = c.fetchall()
+            print('artists: ')
+            print(artist)
+            return
+        elif inp == 3:
+            return
+        else:
+            print('invalid command')
+
 
 def search_artists():
     kw = input("Input the keywords: ").lower().split()
@@ -248,11 +300,7 @@ def search_artists():
             m += 5
             m = min((len(artists) / 5) * 5, m)
 
-
-
     cnt_list.sort(key=lambda x: x[3], reverse=True)
-
-
 
     artists = cnt_list
     m = 0
@@ -266,7 +314,7 @@ def search_artists():
             return
         if 1 <= inp <= n:
             if artists[m + inp - 1][3] == "song":
-                select_song(uid, artists[m + inp - 1][0])
+                select_artists(uid, artists[m + inp - 1][0])
                 return
             if artists[m + inp - 1][3] == "artist":
                 artists = []
@@ -278,10 +326,15 @@ def search_artists():
             m += 5
             m = min((len(artists) / 5) * 5, m)
 
+def select_artists():
+    pass
+
 def end_session(sno, current_id):
     now = datetime.datetime.now()
     date = now.strftime('%Y-%m-%d')
-    c.execute('update sessions set end =:date where sno =:sno and uid =:uid;', {'date':date, 'sno':sno, 'uid':current_id})
+    c.execute('update sessions set end =:date where sno =:sno and uid =:uid;',
+              {'date': date, 'sno': sno, 'uid': current_id})
+
 
 def artist_interface(current_id):
     '''
@@ -301,6 +354,7 @@ def artist_interface(current_id):
         else:
             print('invalid command')
 
+
 def add_song(current_id):
     '''
     add a song to the songs table, and add the relation to perform table
@@ -313,7 +367,7 @@ def add_song(current_id):
     title = input('enter song title: ')
     duration = input('enter duration: ')
     # check if there is a song with same title and duration
-    script = 'select * from songs where title like "' + title +  '" and duration = ' + str(duration) + ';'
+    script = 'select * from songs where title like "' + title + '" and duration = ' + str(duration) + ';'
     c.execute(script)
     ret = c.fetchone()
     # if yes, prompt a warning
@@ -345,7 +399,7 @@ def add_song(current_id):
               {'sid': sid, 'title': title, 'duration': duration})
     while True:
         have_co = input('any co-artist? y/n: ').lower()
-        if  have_co == 'y':
+        if have_co == 'y':
             co_num = int(input('enter the number of co-artists: '))
             for i in range(co_num):
                 while True:
@@ -367,12 +421,30 @@ def add_song(current_id):
     c.execute('insert into perform values (:aid, :sid);', {'aid': current_id, 'sid': sid})
     return
 
+
 def find_top(current_id):
     # query the top 3 users who listen to their songs the longest time
-    script = ''
+    script = 'select u.uid, p.aid, sum(l.cnt) from users u join listen l using (uid) join perform p using (sid) group ' \
+             'by uid having p.aid = "' + current_id + '" order by sum(l.cnt) desc limit 3; '
+    c.execute(script)
     # list their uid and names
+    ret = c.fetchall()
+    print('your top 3 users are: ')
+    for user in ret:
+        c.execute('select * from users where uid =:uid;', {'uid':user[0]})
+        get = c.fetchone()
+        print(get)
     # query the top 3 playlists that include the largest number of their songs
+    script = 'select p.aid, pl.pid, count(p.sid) from perform p join plinclude pl using (sid) group by pl.pid, ' \
+             'p.aid having p.aid = "'+current_id+'" order by count(p.sid) desc limit 3; '
+    c.execute(script)
     # list their pid, title, and uid
+    ret = c.fetchall()
+    print('your top 3 playlists are: ')
+    for pl in ret:
+        c.execute('select * from playlists where pid =:pid;', {'pid':pl[1]})
+        get = c.fetchone()
+        print(get)
 
 
 if __name__ == '__main__':
@@ -388,8 +460,6 @@ if __name__ == '__main__':
             user_interface(input_id)
         elif user_type == '2':
             artist_interface(input_id)
-
-
 
     '''    
     # end
