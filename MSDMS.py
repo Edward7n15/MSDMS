@@ -187,9 +187,12 @@ def search_songs(current_id):
         if inp == 0:
             return
         if 1 <= inp <= n:
-            select_song(songs[m + inp - 1][0], current_id)
-
-            return
+            if artists[m + inp - 1][3] == "song":
+                select_song(songs[m + inp - 1][0], current_id)
+                return
+            if artists[m + inp - 1][3] == "artist":
+                artists = []
+                m = 0
         if inp == 6:
             m -= 5
             m = max(0, m)
