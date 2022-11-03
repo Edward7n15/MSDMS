@@ -1,5 +1,6 @@
 import sqlite3
 import uuid
+from operator import itemgetter
 
 # creating connection from host language to sqlite3
 conn = sqlite3.connect('./MSDMS')
@@ -133,15 +134,33 @@ def start_session():
     pass
 
 def search_songs():
-    kw = input("Input the keywords: ").split()
-
-    songs = []
+    kw = input("Input the keywords: ").lower().split()
+    c.execute('select * from songs;')
+    pack = c.fetchall()
+    cnt_list = []
+    for song in pack:
+        title = song[1].lower().split()
+        joint = [value for value in title if value in kw]
+        joint_num = len(set(joint))
+        if joint_num != 0:
+            cnt_list.append([song[0], song[1], song[2], joint_num, 'song'])
+    c.execute('select * from playlists;')
+    pack = c.fetchall()
+    for playlist in pack:
+        title = playlist[1].lower().split()
+        joint = [value for value in title if value in kw]
+        joint_num = len(set(joint))
+        if joint_num != 0:
+            cnt_list.append([playlist[0], playlist[1], playlist[2], joint_num, 'playlist'])
+    cnt_list.sort(key=lambda x: x[3], reverse=True)
+    songs = cnt_list
     m = 0
     while True:
-        n = min(5, len(songs)-m)
-        for i in range(m, m+n):
+        n = min(5, len(songs) - m)
+        for i in range(m, m + n):
             print(songs[i])
-        inp = int(input("Enter 0 to end, Enter 1 to 5 to select the songs, Enter 6 to go the previous page, Enter 7 to go the next page"))
+        inp = int(input(
+            "Enter 0 to end, Enter 1 to 5 to select the songs, Enter 6 to go the previous page, Enter 7 to go the next page"))
         if inp == 0:
             return
         if 1 <= inp <= n:
@@ -152,28 +171,56 @@ def search_songs():
             m = max(0, m)
         elif inp == 7:
             m += 5
-            m = min((len(songs)/5)*5, m)
-    pass
+            m = min(int(len(songs) / 5) * 5, m)
 
 def select_song():
     pass
 
 def search_artists():
-    kw = input("Input the keywords: ").split()
-    artists = []
+    kw = input("Input the keywords: ").lower().split()
+    c.execute('with song_num(aid, num) as (select a.aid, count(sid) from artists a join perform using (aid) join '
+              'songs using (sid) group by a.aid)select * from artists join perform using (aid) join songs using (sid) '
+              'join song_num using (aid); ')
+    pack = c.fetchall()
+    cnt_list = []
+    joint_num = 0
+    cnt = {}
+    for artist in pack:
+        name = artist[1].lower().split()
+        if name not in cnt.keys():
+            cnt[name] = 0
+        title = artist[-3].lower().split()
+        joint_name = [value for value in name if value in kw]
+
+        joint_title = [value for value in title if value in kw]
+
+        joint_num_name = len(set(joint_name))
+        joint_num_title = len(set(joint_title))
+        joint_num += (joint_num_title + joint_num_name)
+        if joint_num != 0:
+            cnt_list.append([artist[0], artist[1], artist[2], artist[-1], joint_num])
+
+
+
+    cnt_list.sort(key=lambda x: x[3], reverse=True)
+
+
+
+    artists = cnt_list
     m = 0
     while True:
-        n = min(5, len(artists)-m)
-        for i in range(m, m+n):
+        n = min(5, len(artists) - m)
+        for i in range(m, m + n):
             print(artists[i])
-        inp = int(input("Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page"))
+        inp = int(input(
+            "Enter 0 to end, Enter 1 to 5 to select, Enter 6 to go the previous page, Enter 7 to go the next page"))
         if inp == 0:
             return
         if 1 <= inp <= n:
-            if artists[m + inp -1][3] == "song":
+            if artists[m + inp - 1][3] == "song":
                 select_song(uid, artists[m + inp - 1][0])
                 return
-            if artists[m + inp -1][3] == "artist":
+            if artists[m + inp - 1][3] == "artist":
                 artists = []
                 m = 0
         if inp == 6:
@@ -181,8 +228,7 @@ def search_artists():
             m = max(0, m)
         elif inp == 7:
             m += 5
-            m = min((len(artists)/ 5)*5, m)
-    pass
+            m = min((len(artists) / 5) * 5, m)
 
 def end_session():
     pass
@@ -235,7 +281,7 @@ def add_song(current_id):
         # if no, assign the song an unique sid, and ask if there is any other co-artist
 
     # random sid
-    sid = str(uuid.uuid4())
+    sid = str(uuid.uuid4().int)
     c.execute('insert into songs values (:sid, :title, :duration);',
               {'sid': sid, 'title': title, 'duration': duration})
     while True:
