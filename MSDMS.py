@@ -183,26 +183,19 @@ def search_artists():
               'join song_num using (aid); ')
     pack = c.fetchall()
     cnt_list = []
-    joint_num = 0
     cnt = {}
     for artist in pack:
-        name = artist[1].lower().split()
-        if name not in cnt.keys():
+        name = artist[1].lower()
+        if name not in cnt:
             cnt[name] = 0
         title = artist[-3].lower().split()
-        joint_name = [value for value in name if value in kw]
-
+        joint_name = [value for value in name.split() if value in kw]
         joint_title = [value for value in title if value in kw]
-
         joint_num_name = len(set(joint_name))
         joint_num_title = len(set(joint_title))
-        joint_num += (joint_num_title + joint_num_name)
-        if joint_num != 0:
-            cnt_list.append([artist[0], artist[1], artist[2], artist[-1], joint_num])
-
-
-
-    cnt_list.sort(key=lambda x: x[3], reverse=True)
+        joint_num = joint_num_title + joint_num_name
+        cnt[name] += joint_num
+    sorted(cnt.items(), key=lambda kv:(kv[1], kv[0]), reverse = True)
 
 
 
