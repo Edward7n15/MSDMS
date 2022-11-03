@@ -3,9 +3,12 @@ import random
 import datetime
 
 # creating connection from host language to sqlite3
-conn = sqlite3.connect('./MSDMS')
-c = conn.cursor()
 script = None
+db = input('enter db name: ')
+script = './'+db
+conn = sqlite3.connect(script)
+c = conn.cursor()
+
 
 """
 def login(input_id):
@@ -516,8 +519,10 @@ def find_top(current_id):
 
 
 if __name__ == '__main__':
-    with open('prj-tables.txt', 'r') as infile:
+    '''
+    with open(input('enter file name: '), 'r') as infile:
         conn.executescript(infile.read())
+    '''
     while True:
         print('-> This is the login screen')
         while True:
