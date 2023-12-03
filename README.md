@@ -6,10 +6,14 @@ MSDMS, which stands for Music Stream Database Management System, is a versatile 
 
 ## Key Features:
 
-- Efficient Music Queries: Users can effortlessly search for songs based on artists, accessing an extensive database for song discovery.
-- Session Management: The system records user login and logout times, maintaining session history for enhanced security and accountability.
-- Customizable Song Lists: Users can curate personalized song lists, both private and public, with options to add or delete songs at their discretion.
-- Social Interaction: The platform encourages social engagement by allowing users to follow other users and artists, facilitating an interconnected music community.
+- Efficient Music Queries 
+  -  Users can effortlessly search for songs based on artists, accessing an extensive database for song discovery.
+- Session Management
+  -  The system records user login and logout times, maintaining session history for enhanced security and accountability.
+- Customizable Song Lists
+  -  Users can curate personalized song lists, both private and public, with options to add or delete songs at their discretion.
+- Social Interaction
+  -  The platform encourages social engagement by allowing users to follow other users and artists, facilitating an interconnected music community.
 
 ## Functionality Highlights:
 
